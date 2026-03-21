@@ -1,0 +1,41 @@
+(* ejemplo.yal - Analizador Léxico para expresiones aritméticas simples *)
+(* Universidad del Valle de Guatemala - CC3071 *)
+
+{
+(* Header: código copiado al inicio del archivo generado *)
+(* Las definiciones 'let' permiten reutilizar expresiones regulares *)
+}
+
+(* Definiciones de tokens comunes *)
+let digit   = ['0'-'9']
+let letter  = ['a'-'z' 'A'-'Z']
+let ws      = [' ' '\t']
+let newline = ['\n' '\r']
+let alphanum = ['a'-'z' 'A'-'Z' '0'-'9']
+
+(* ─── Reglas del lexer ─── *)
+rule gettoken =
+      ws+            { return lexbuf }
+    | newline        { return "EOL" }
+    | digit+         { return ("INT", int(lxm)) }
+    | "if"           { return "IF" }
+    | "else"         { return "ELSE" }
+    | "while"        { return "WHILE" }
+    | letter alphanum* { return ("ID", lxm) }
+    | '+'            { return "PLUS" }
+    | '-'            { return "MINUS" }
+    | '*'            { return "TIMES" }
+    | '/'            { return "DIV" }
+    | '('            { return "LPAREN" }
+    | ')'            { return "RPAREN" }
+    | '='            { return "ASSIGN" }
+    | "=="           { return "EQ" }
+    | "!="           { return "NEQ" }
+    | '<'            { return "LT" }
+    | '>'            { return "GT" }
+    | ';'            { return "SEMICOLON" }
+    | eof            { raise Exception("Fin de buffer") }
+
+{
+(* Trailer: código copiado al final del archivo generado *)
+}

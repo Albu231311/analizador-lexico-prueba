@@ -1,0 +1,8 @@
+let vowel      = ['a'-'z'] # "aeiou"
+let digit      = ['0'-'9']
+
+rule gettoken =
+    vowel+     { return ("CONSONANTS", lxm) }
+  | digit+     { return ("NUMBER", lxm) }
+  | ' '        { return lexbuf }
+  | eof        { raise Exception("EOF") }

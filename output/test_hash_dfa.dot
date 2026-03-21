@@ -1,0 +1,18 @@
+digraph DFA {
+  graph [rankdir=LR bgcolor="#FAFAFA" label="DFA del Analizador Léxico"          fontsize=14 fontname="Helvetica"];
+  node  [fontname="Courier" fontsize=10];
+  edge  [fontname="Courier" fontsize=9 arrowsize=0.7];
+  __start__ [shape=none label=""];
+  __start__ -> 0;
+  0 [shape=circle style=filled fillcolor="#87CEEB" label="q0\n(start)"];
+  1 [shape=doublecircle style=filled fillcolor="#90EE90" label="q1\n(R2)"];
+  2 [shape=doublecircle style=filled fillcolor="#90EE90" label="q2\n(R1)"];
+  3 [shape=doublecircle style=filled fillcolor="#90EE90" label="q3\n(R0)"];
+  4 [shape=doublecircle style=filled fillcolor="#90EE90" label="q4\n(R3)"];
+  0 -> 1 [label="SP"];
+  0 -> 2 [label="0-9"];
+  0 -> 3 [label="[21 chars]"];
+  0 -> 4 [label="EOF"];
+  2 -> 2 [label="0-9"];
+  3 -> 3 [label="[21 chars]"];
+}
