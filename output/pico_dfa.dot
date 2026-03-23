@@ -1,5 +1,5 @@
 digraph DFA {
-  graph [rankdir=LR bgcolor="#FAFAFA" label="DFA del Analizador LÃ©xico"          fontsize=14 fontname="Helvetica"];
+  graph [rankdir=LR bgcolor="#FAFAFA" label="DFA del Analizador Lexico"          fontsize=14 fontname="Helvetica"];
   node  [fontname="Courier" fontsize=10];
   edge  [fontname="Courier" fontsize=9 arrowsize=0.7];
   __start__ [shape=none label=""];

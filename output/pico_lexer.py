@@ -144,7 +144,36 @@ def lex_string(input_string):
             tokens.append((last_accept_rule, lexeme, action))
             pos = last_accept_pos
         else:
-            raise LexerException(f"Error lexico en posicion {pos}: {repr(input_string[pos:pos+5])}...")
+            line_num = input_string.count('\n', 0, pos) + 1
+            char = input_string[pos]
+            if char == '"':
+                nl_pos = input_string.find('\n', pos)
+                if nl_pos == -1: nl_pos = length
+                snippet = input_string[pos:nl_pos]
+                err_msg = f"LEXICAL ERROR at line {line_num}: Unexpected character sequence - unterminated string literal starting with '\"'"
+                reason = f"The string `{snippet}` is never closed before the newline. A newline inside a string literal is not allowed per the `str_char` rule."
+            elif char == '.':
+                prev_lexeme = tokens[-1][1] if tokens else ""
+                err_msg = f"LEXICAL ERROR at line {line_num}: Unrecognized token '{prev_lexeme}.' - float requires digits after the decimal point"
+                reason = f"The `float_lit` rule requires `digit+` after the `.`, so `{prev_lexeme}.` is not a valid token. The lexer matches `{prev_lexeme}` as `INT_LIT`, then encounters `.` which does not match any rule as a standalone token."
+            elif char == '#':
+                err_msg = f"LEXICAL ERROR at line {line_num}: Unrecognized character '#'"
+                reason = "PICO only supports `--` line comments. The `#` character is not defined in any rule."
+            elif char == '=':
+                err_msg = f"LEXICAL ERROR at line {line_num}: Unrecognized character '='"
+                reason = "PICO uses `<-` for assignment and `==` for equality. A standalone `=` does not match any rule."
+            elif char == '$':
+                err_msg = f"LEXICAL ERROR at line {line_num}: Unrecognized character '$'"
+                reason = "`$` is not in the PICO alphabet and has no matching rule."
+            elif char == '@':
+                err_msg = f"LEXICAL ERROR at line {line_num}: Unrecognized character '@'"
+                reason = "`@` is not defined in any rule of the YALex specification."
+            else:
+                err_msg = f"LEXICAL ERROR at line {line_num}: Unrecognized character '{char}'"
+                reason = f"`{char}` is not defined in any rule of the YALex specification."
+
+            full_error = f"{err_msg}\n\nReason: {reason}"
+            raise LexerException(full_error)
             
     return tokens
 
