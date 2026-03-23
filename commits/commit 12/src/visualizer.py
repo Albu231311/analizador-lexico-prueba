@@ -1,0 +1,218 @@
+﻿"""
+Nicolás Concuá - 23197
+Esteban Cárcamo - 23016
+Kevin Villagrán - 23584
+Carlos Alburez - 231311
+Universidad del Valle de Guatemala - CC3071
+Fases de Compilación: Generador de Analizadores Léxicos
+"""
+
+import os
+from regex_ast import RegexNode, char_label, EOF_CHAR
+
+def _node_color(node):
+    """Asigna color por tipo de nodo."""
+    from regex_ast import (LeafNode, EpsilonNode,
+                           ConcatNode, UnionNode, StarNode, PlusNode, OptionalNode)
+    if isinstance(node, (LeafNode, EpsilonNode)):
+        return '#F4A460'
+    elif isinstance(node, ConcatNode):
+        return '#87CEEB'
+    elif isinstance(node, (StarNode, PlusNode, OptionalNode)):
+        return '#DDA0DD'
+    return '#FFFFFF'
+
+
+def _dot_escape(s):
+    """Escapa una cadena para usarla como etiqueta DOT."""
+    s = s.replace('\\', '\\\\')
+    s = s.replace('"', '\\"')
+    s = s.replace('\n', '\\n')
+    return s
+
+
+def _tree_to_dot(node, dot_lines, counter):
+    """Recorre el Ã¡rbol y genera lÃ­neas DOT."""
+    if node is None:
+        return None
+    nid = f"n{counter[0]}"
+    counter[0] += 1
+    label = _dot_escape(node.label())
+    color = _node_color(node)
+    dot_lines.append(
+        f'  {nid} [label="{label}" style=filled fillcolor="{color}" '
+        f'shape=circle fontname="Courier" fontsize=11];'
+    )
+    for child in node.children():
+        child_id = _tree_to_dot(child, dot_lines, counter)
+        if child_id:
+            dot_lines.append(f'  {nid} -> {child_id};')
+    return nid
+
+
+def visualize_expression_tree(ast_root, output_path):
+    try:
+        import graphviz
+    except ImportError:
+        graphviz = None
+
+    dot_lines = [
+        'digraph ExpressionTree {',
+        '  graph [rankdir=TB bgcolor="#FAFAFA" label="Arbol de Expresion Combinado" ',
+        '         fontsize=14 fontname="Helvetica"];',
+        '  node  [shape=circle fontname="Courier" fontsize=10];',
+        '  edge  [arrowsize=0.7];',
+    ]
+
+    counter = [0]
+    _tree_to_dot(ast_root, dot_lines, counter)
+    dot_lines.append('}')
+    dot_source = '\n'.join(dot_lines)
+
+    # Guardar .dot
+    dot_file = output_path + '.dot'
+    with open(dot_file, 'w', encoding='utf-8') as f:
+        f.write(dot_source)
+
+    # Renderizar con graphviz
+    if graphviz is not None:
+        try:
+            src = graphviz.Source(dot_source)
+            src.render(output_path, format='png', cleanup=True)
+        except Exception as e:
+            print(f"  [!] Error al renderizar Ã¡rbol: {e}")
+            _render_dot(dot_file, output_path + '.png')
+    else:
+        _render_dot(dot_file, output_path + '.png')
+
+def visualize_dfa(dfa, output_path, rule_labels=None):
+    """Genera la visualizaciÃ³n del DFA."""
+    dot_lines = [
+        'digraph DFA {',
+        '  graph [rankdir=LR bgcolor="#FAFAFA" label="DFA del Analizador Lexico" '
+        '         fontsize=14 fontname="Helvetica"];',
+        '  node  [fontname="Courier" fontsize=10];',
+        '  edge  [fontname="Courier" fontsize=9 arrowsize=0.7];',
+        '  __start__ [shape=none label=""];',
+        f'  __start__ -> {dfa.start};',
+    ]
+
+    all_states = set(range(len(dfa.states)))
+
+    for s in sorted(all_states):
+        if s in dfa.accepts:
+            rule_idx = dfa.accepts[s]
+            lbl = f"R{rule_idx}" if not rule_labels else f"R{rule_idx}"
+            dot_lines.append(
+                f'  {s} [shape=doublecircle style=filled '
+                f'fillcolor="#90EE90" label="q{s}\\n({lbl})"];'
+            )
+        elif s == dfa.start:
+            dot_lines.append(
+                f'  {s} [shape=circle style=filled fillcolor="#87CEEB" label="q{s}\\n(start)"];'
+            )
+        else:
+            dot_lines.append(f'  {s} [shape=circle label="q{s}"];')
+
+    # Agrupar transiciones por (origen, destino)
+    edge_labels = {}
+    for frm, sym_map in dfa.transitions.items():
+        for sym, to in sym_map.items():
+            edge_labels.setdefault((frm, to), []).append(sym)
+
+    for (frm, to), syms in sorted(edge_labels.items()):
+        label = _compact_label(sorted(syms))
+        dot_lines.append(f'  {frm} -> {to} [label="{label}"];')
+    dot_lines.append('}')
+    dot_source = '\n'.join(dot_lines)
+
+    dot_file = output_path + '.dot'
+    with open(dot_file, 'w', encoding='utf-8') as f:
+        f.write(dot_source)
+
+    _render_dot(dot_file, output_path + '.png')
+
+
+def _compact_label(codes):
+    """Convierte lista de codigos en etiqueta compacta (rangos)."""
+    if not codes:
+        return ''
+    if len(codes) > 12:
+        return f'[{len(codes)} chars]'
+
+    ranges = []
+    i = 0
+    while i < len(codes):
+        j = i
+        while j + 1 < len(codes) and codes[j+1] == codes[j] + 1:
+            j += 1
+        if j - i >= 2:
+            ranges.append(f"{char_label(codes[i])}-{char_label(codes[j])}")
+        else:
+            for k in range(i, j + 1):
+                ranges.append(char_label(codes[k]))
+        i = j + 1
+
+    label = ','.join(ranges)
+    return _dot_escape(label)[:50]
+
+
+def visualize_nfa(nfa, output_path):
+    """Genera la visualizacion del NFA."""
+    from regex_ast import char_label
+
+    dot_lines = [
+        'digraph NFA {',
+        '  graph [rankdir=LR bgcolor="#FAFAFA" label="NFA (Thompson)" '
+        '         fontsize=14 fontname="Helvetica"];',
+        '  node  [shape=circle fontname="Courier" fontsize=9];',
+        '  edge  [fontname="Courier" fontsize=8 arrowsize=0.6];',
+        '  __s__ [shape=none label=""];',
+        f'  __s__ -> {nfa.start};',
+    ]
+
+    for s in range(nfa.states):
+        if s in nfa.accepts:
+            dot_lines.append(f'  {s} [shape=doublecircle style=filled fillcolor="#90EE90"];')
+        elif s == nfa.start:
+            dot_lines.append(f'  {s} [style=filled fillcolor="#87CEEB"];')
+
+    edge_labels = {}
+    for frm, trans_list in nfa.transitions.items():
+        for sym, to in trans_list:
+            lbl = 'Îµ' if sym is None else char_label(sym)
+            edge_labels.setdefault((frm, to), set()).add(lbl)
+
+    for (frm, to), lbls in sorted(edge_labels.items()):
+        lbl = ','.join(sorted(lbls))[:30]
+        lbl = lbl.replace('"', '\\"')
+        dot_lines.append(f'  {frm} -> {to} [label="{lbl}"];')
+
+    dot_lines.append('}')
+    dot_source = '\n'.join(dot_lines)
+
+    dot_file = output_path + '.dot'
+    with open(dot_file, 'w', encoding='utf-8') as f:
+        f.write(dot_source)
+
+    _render_dot(dot_file, output_path + '.png')
+
+
+def _render_dot(dot_file, png_file):
+    """Renderiza un archivo .dot a PNG usando el binario dot."""
+    import subprocess
+    try:
+        result = subprocess.run(
+            ['dot', '-Tpng', dot_file, '-o', png_file],
+            capture_output=True, timeout=30
+        )
+        if result.returncode != 0:
+            print(f"  [!] dot retornÃ³ cÃ³digo {result.returncode}: {result.stderr.decode()}")
+        else:
+            print(f"Imagen generada: {png_file}")
+    except FileNotFoundError:
+        print("  [!] 'dot' no encontrado. Instale graphviz: sudo apt-get install graphviz")
+    except Exception as e:
+        print(f"  [!] Error al renderizar: {e}")
+
+

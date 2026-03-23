@@ -1,0 +1,32 @@
+# Instrucciones para los Commits del Proyecto
+
+El proyecto se ha dividido en 12 pasos (commits) distribuidos en 4 integrantes para simular el trabajo colaborativo.
+Para subir esto a su repositorio, deben crear un repositorio en GitHub/GitLab, invitar a los 4 integrantes, y cada uno debe clonar el repositorio y hacer los commits que le corresponden en orden.
+
+Asignen a cada integrante un número del 1 al 4.
+
+## Integrante 1 (Commits 1 al 3)
+El integrante 1 comenzará la estructura base del analizador léxico, específicamente el Árbol de Sintaxis Abstracta (AST) de las expresiones regulares y el inicio del parser.
+- **Commit 1:** Copiar el contenido de la carpeta `commit 1/` a la raíz del repositorio. Hacer `git add .`, luego `git commit -m "feat: iniciar estructura del AST para regex"` y hacer `git push`.
+- **Commit 2:** Copiar el contenido de la carpeta `commit 2/` (sobreescribiendo lo anterior). Hacer `git add .` luego `git commit -m "feat: completar nodos del AST de regex"` y push.
+- **Commit 3:** Copiar el contenido de la carpeta `commit 3/`. Hacer `git add .` luego `git commit -m "feat: iniciar parser de expresiones regulares"` y push.
+
+## Integrante 2 (Commits 4 al 6)
+El integrante 2 debe hacer `git pull` para obtener los cambios del Integrante 1. Continuará con el parser de regex, el autómata y el inicio del parser de Yalex.
+- **Commit 4:** Copiar el contenido de `commit 4/`. Hacer `git add .` y `git commit -m "feat: finalizar parser de expresiones regulares (Shunting Yard + Thompson)"` y push.
+- **Commit 5:** Copiar el contenido de `commit 5/`. Hacer `git add .` y `git commit -m "feat: implementar generacion de automatas y simulacion"` y push.
+- **Commit 6:** Copiar el contenido de `commit 6/`. Hacer `git add .` y `git commit -m "feat: iniciar lectura y parsing de archivos Yalex"` y push.
+
+## Integrante 3 (Commits 7 al 9)
+El integrante 3 debe hacer `git pull` para obtener los cambios del Integrante 2. Finalizará el parser de Yalex y comenzará el generador de código léxico.
+- **Commit 7:** Copiar el contenido de `commit 7/`. Hacer `git add .` y `git commit -m "feat: completar parser de Yalex (reglas y tokens)"` y push.
+- **Commit 8:** Copiar el contenido de `commit 8/`. Hacer `git add .` y `git commit -m "feat: iniciar generador de codigo para el lexer"` y push.
+- **Commit 9:** Copiar el contenido de `commit 9/`. Hacer `git add .` y `git commit -m "feat: finalizar generador de codigo del lexer (code_gen)"` y push.
+
+## Integrante 4 (Commits 10 al 12)
+El integrante 4 debe hacer `git pull` para obtener los cambios del Integrante 3. Integrará todo con el main, agregará el visualizador y el README.
+- **Commit 10:** Copiar el contenido de `commit 10/`. Hacer `git add .` y `git commit -m "feat: implementar visualizador de automatas (Graphviz)"` y push.
+- **Commit 11:** Copiar el contenido de `commit 11/`. Hacer `git add .` y `git commit -m "feat: crear punto de entrada principal (main.py)"` y push.
+- **Commit 12:** Copiar el contenido de `commit 12/`. Hacer `git add .` y `git commit -m "docs: agregar README.md con la documentacion del proyecto"` y push.
+
+¡Con esto tendrán el historial completo y distribuido en el repositorio!
