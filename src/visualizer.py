@@ -1,8 +1,10 @@
 ﻿"""
-visualizer.py - VisualizaciÃ³n de Ãrboles de ExpresiÃ³n y AutÃ³matas
+Nicolás Concuá - 23197
+Esteban Cárcamo - 23016
+Kevin Villagrán - 23584
+Carlos Alburez - 231311
 Universidad del Valle de Guatemala - CC3071
-
-Genera imÃ¡genes PNG y archivos DOT usando Graphviz.
+Fases de Compilación: Generador de Analizadores Léxicos
 """
 
 import os
@@ -84,17 +86,10 @@ def visualize_expression_tree(ast_root, output_path):
         _render_dot(dot_file, output_path + '.png')
 
 def visualize_dfa(dfa, output_path, rule_labels=None):
-    """
-    Genera la visualizaciÃ³n del DFA.
-
-    Args:
-        dfa: objeto DFA
-        output_path: ruta base de salida
-        rule_labels: lista de strings cortos para identificar reglas
-    """
+    """Genera la visualizaciÃ³n del DFA."""
     dot_lines = [
         'digraph DFA {',
-        '  graph [rankdir=LR bgcolor="#FAFAFA" label="DFA del Analizador LÃ©xico" '
+        '  graph [rankdir=LR bgcolor="#FAFAFA" label="DFA del Analizador Lexico" '
         '         fontsize=14 fontname="Helvetica"];',
         '  node  [fontname="Courier" fontsize=10];',
         '  edge  [fontname="Courier" fontsize=9 arrowsize=0.7];',
@@ -139,7 +134,7 @@ def visualize_dfa(dfa, output_path, rule_labels=None):
 
 
 def _compact_label(codes):
-    """Convierte lista de cÃ³digos en etiqueta compacta (rangos)."""
+    """Convierte lista de codigos en etiqueta compacta (rangos)."""
     if not codes:
         return ''
     if len(codes) > 12:
@@ -163,7 +158,7 @@ def _compact_label(codes):
 
 
 def visualize_nfa(nfa, output_path):
-    """Genera la visualizaciÃ³n del NFA."""
+    """Genera la visualizacion del NFA."""
     from regex_ast import char_label
 
     dot_lines = [

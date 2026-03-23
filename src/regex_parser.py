@@ -78,13 +78,7 @@ def _parse_string_literal(s, i):
     return codes, i + 1
 
 class RegexParser:
-    """
-    Parser de Expresiones Regulares YALex.
-
-    Uso:
-        p = RegexParser(lets_dict)
-        ast = p.parse("['a'-'z']+")
-    """
+    """Parser de Expresiones Regulares YALex."""
 
     def __init__(self, lets=None):
         self.lets = lets or {}
