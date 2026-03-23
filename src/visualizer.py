@@ -8,23 +8,16 @@ Genera imÃ¡genes PNG y archivos DOT usando Graphviz.
 import os
 from regex_ast import RegexNode, char_label, EOF_CHAR
 
-
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-#                 Ãrbol de ExpresiÃ³n
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-
 def _node_color(node):
     """Asigna color por tipo de nodo."""
-    from regex_ast import (LiteralNode, CharSetNode, AnyCharNode, EpsilonNode,
+    from regex_ast import (LeafNode, EpsilonNode,
                            ConcatNode, UnionNode, StarNode, PlusNode, OptionalNode)
-    if isinstance(node, (LiteralNode, CharSetNode, AnyCharNode, EpsilonNode)):
-        return '#A8D8A8'   # verde claro - hojas
-    elif isinstance(node, UnionNode):
-        return '#F4A460'   # naranja - uniÃ³n
+    if isinstance(node, (LeafNode, EpsilonNode)):
+        return '#F4A460'
     elif isinstance(node, ConcatNode):
-        return '#87CEEB'   # azul - concatenaciÃ³n
+        return '#87CEEB'
     elif isinstance(node, (StarNode, PlusNode, OptionalNode)):
-        return '#DDA0DD'   # violeta - cuantificadores
+        return '#DDA0DD'
     return '#FFFFFF'
 
 
@@ -55,46 +48,22 @@ def _tree_to_dot(node, dot_lines, counter):
     return nid
 
 
-def visualize_expression_tree(rules_info, output_path):
-    """
-    Genera el Ã¡rbol de expresiÃ³n combinado para todas las reglas.
-
-    Args:
-        rules_info: lista de (ast, action, regexp_str)
-        output_path: ruta base de salida (sin extensiÃ³n)
-    """
+def visualize_expression_tree(ast_root, output_path):
     try:
         import graphviz
     except ImportError:
-        print("  [!] graphviz no instalado. Generando solo DOT.")
         graphviz = None
 
     dot_lines = [
         'digraph ExpressionTree {',
-        '  graph [rankdir=TB bgcolor="#FAFAFA" label="Ãrbol de ExpresiÃ³n Combinado" '
+        '  graph [rankdir=TB bgcolor="#FAFAFA" label="Arbol de Expresion Combinado" ',
         '         fontsize=14 fontname="Helvetica"];',
         '  node  [shape=circle fontname="Courier" fontsize=10];',
         '  edge  [arrowsize=0.7];',
     ]
 
     counter = [0]
-    rule_roots = []
-
-    for i, (ast, action, regexp_str) in enumerate(rules_info):
-        # Nodo raÃ­z de la regla
-        rid = f"rule{i}"
-        short_re = regexp_str[:40] + ('...' if len(regexp_str) > 40 else '')
-        short_re = _dot_escape(short_re)
-        dot_lines.append(
-            f'  {rid} [label="Regla {i+1}\\n{short_re}" shape=box '
-            f'style=filled fillcolor="#FFD700" fontname="Helvetica" fontsize=9];'
-        )
-
-        root_id = _tree_to_dot(ast, dot_lines, counter)
-        if root_id:
-            dot_lines.append(f'  {rid} -> {root_id} [style=dashed color=gray];')
-        rule_roots.append(rid)
-
+    _tree_to_dot(ast_root, dot_lines, counter)
     dot_lines.append('}')
     dot_source = '\n'.join(dot_lines)
 
@@ -110,15 +79,9 @@ def visualize_expression_tree(rules_info, output_path):
             src.render(output_path, format='png', cleanup=True)
         except Exception as e:
             print(f"  [!] Error al renderizar Ã¡rbol: {e}")
-            # Intentar con subprocess
             _render_dot(dot_file, output_path + '.png')
     else:
         _render_dot(dot_file, output_path + '.png')
-
-
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-#                     DFA
-# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def visualize_dfa(dfa, output_path, rule_labels=None):
     """
@@ -156,8 +119,8 @@ def visualize_dfa(dfa, output_path, rule_labels=None):
         else:
             dot_lines.append(f'  {s} [shape=circle label="q{s}"];')
 
-    # Agrupar transiciones por (origen, destino) para mostrar rangos
-    edge_labels = {}   # (from, to) â†’ list of char codes
+    # Agrupar transiciones por (origen, destino)
+    edge_labels = {}
     for frm, sym_map in dfa.transitions.items():
         for sym, to in sym_map.items():
             edge_labels.setdefault((frm, to), []).append(sym)
@@ -251,7 +214,7 @@ def _render_dot(dot_file, png_file):
         if result.returncode != 0:
             print(f"  [!] dot retornÃ³ cÃ³digo {result.returncode}: {result.stderr.decode()}")
         else:
-            print(f"  [âœ“] Imagen generada: {png_file}")
+            print(f"Imagen generada: {png_file}")
     except FileNotFoundError:
         print("  [!] 'dot' no encontrado. Instale graphviz: sudo apt-get install graphviz")
     except Exception as e:

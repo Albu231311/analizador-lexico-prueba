@@ -49,7 +49,6 @@ def lex_string(input_string):
         while current_pos < length:
             char_code = ord(input_string[current_pos])
             
-            # Transition
             if current_state in TRANSITIONS and char_code in TRANSITIONS[current_state]:
                 current_state = TRANSITIONS[current_state][char_code]
             else:
@@ -59,7 +58,6 @@ def lex_string(input_string):
             
             if current_state in ACCEPTING_STATES:
                 rule_id = ACCEPTING_STATES[current_state]
-                # Longest match, but if same length, prioritize lowest rule_id
                 if current_pos > last_accept_pos or (current_pos == last_accept_pos and rule_id < last_accept_rule):
                     last_accept_state = current_state
                     last_accept_pos = current_pos
@@ -85,8 +83,39 @@ if __name__ == '__main__':
         
     try:
         tokens = lex_string(content)
+        
+        final_tokens = []
         for t in tokens:
-            print(f"Rule: {{t[0]}}, Lexeme: {{repr(t[1])}}, Action: {{t[2]}}")
+            rule_id, lexeme, action_str = t
+            action_str = action_str.strip()
+            if action_str.startswith("return"):
+                val = action_str[6:].strip()
+                if val == "lexbuf":
+                    continue
+                
+                if "lxm" in val:
+                    val = val.replace("lxm", repr(lexeme))
+                
+                if val.startswith("(") and val.endswith(")"):
+                    val = val
+                else:
+                    val = repr(val)
+                    
+                final_tokens.append(val)
+            elif action_str:
+                final_tokens.append(repr(action_str))
+
+        print(f"Se encontraron {{len(final_tokens)}} token(s):")
+        for i, val in enumerate(final_tokens, 1):
+            try:
+                parsed_val = eval(val)
+                if isinstance(parsed_val, tuple):
+                    print(f"  [ {{i:>2}} ] {{parsed_val}}")
+                else:
+                    print(f"  [ {{i:>2}} ] {{repr(parsed_val)}}")
+            except:
+                print(f"  [ {{i:>2}} ] {{val}}")
+
     except Exception as e:
         print(e)
 """

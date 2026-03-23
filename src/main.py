@@ -14,7 +14,7 @@ from regex_parser import RegexParser
 from automata import DirectDFA
 from regex_ast import ConcatNode, UnionNode, LeafNode
 from code_gen import generate_lexer
-from visualizer import visualize_dfa
+from visualizer import visualize_dfa, visualize_expression_tree
 
 def main(yal_path):
     print(f"Analizando {yal_path}...")
@@ -42,12 +42,17 @@ def main(yal_path):
     
     print(f"DFA generado con {len(dfa.states)} estados.")
     
+    print("Generando imagenes de arbol y DFA...")
     out_dir = 'output'
     os.makedirs(out_dir, exist_ok=True)
-    
-    dfa_path = os.path.join(out_dir, f"{base_name}_dfa.dot")
+
+    ast_path = os.path.join(out_dir, f"{base_name}_expression_tree")
+    visualize_expression_tree(combined_ast, ast_path)
+    print(f"AST visualizado en {ast_path}.dot")
+
+    dfa_path = os.path.join(out_dir, f"{base_name}_dfa")
     visualize_dfa(dfa, dfa_path)
-    print(f"DFA visualizado en {dfa_path}")
+    print(f"DFA visualizado en {dfa_path}.dot")
     
     print("Generando codigo fuente del lexer...")
     lex_path = os.path.join(out_dir, f"{base_name}_lexer.py")
