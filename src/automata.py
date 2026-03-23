@@ -1,5 +1,11 @@
-﻿# automata.py - Direct DFA Construction from AST
-# Universidad del Valle de Guatemala - CC3071
+﻿"""
+Nicolás Concuá - 23197
+Esteban Cárcamo - 23016
+Kevin Villagrán - 23584
+Carlos Alburez - 231311
+Universidad del Valle de Guatemala - CC3071
+Fases de Compilación: Generador de Analizadores Léxicos 
+"""
 from regex_ast import LeafNode, ConcatNode, EpsilonNode
 
 class DirectDFA:
@@ -8,8 +14,8 @@ class DirectDFA:
         self.followpos = {}
         self.pos_mapping = {}
         self.states = []
-        self.transitions = {}  # {state_index: {symbol: next_state_index}}
-        self.accepts = {}  # {state_index: rule_id}
+        self.transitions = {}
+        self.accepts = {}
         self.start = 0
         self._build()
 
@@ -27,14 +33,11 @@ class DirectDFA:
             self._assign_positions(node.child, counter)
 
     def _build(self):
-        # Assign positions to leaves
         counter = [1]
         self._assign_positions(self.root, counter)
 
-        # Calculate nullable, firstpos, lastpos, followpos
         self.root.calculate_properties(self.followpos, self.pos_mapping)
 
-        # Build DFA states
         start_set = frozenset(self.root.firstpos)
         self.states.append(start_set)
         unmarked = [0]
@@ -44,26 +47,20 @@ class DirectDFA:
             current_idx = unmarked.pop(0)
             current_set = self.states[current_idx]
             
-            
-            # Group positions by symbol
             sym_positions = {}
             for pos in current_set:
                 leaf = self.pos_mapping[pos]
                 if leaf.rule_id is not None:
-                    # Accepting position
                     if current_idx not in self.accepts or leaf.rule_id < self.accepts[current_idx]:
-                        # Lower rule_id = higher priority
                         self.accepts[current_idx] = leaf.rule_id
                     continue
                 
-                # Normal transition
                 if leaf.code is not None:
                     sym_positions.setdefault(leaf.code, set()).update(self.followpos.get(pos, set()))
                 elif leaf.codes is not None:
                     for c in leaf.codes:
                         sym_positions.setdefault(c, set()).update(self.followpos.get(pos, set()))
                 else: 
-                    # ANY
                     for c in range(128):
                         sym_positions.setdefault(c, set()).update(self.followpos.get(pos, set()))
 
@@ -76,6 +73,3 @@ class DirectDFA:
                     state_map[target] = new_idx
                     unmarked.append(new_idx)
                 self.transitions.setdefault(current_idx, {})[sym] = state_map[target]
-
-
-
