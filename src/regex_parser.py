@@ -1,6 +1,10 @@
 """
-regex_parser.py - Parser de Expresiones Regulares para YALex
+Nicolás Concuá - 23197
+Esteban Cárcamo - 23016
+Kevin Villagrán - 23584
+Carlos Alburez - 231311
 Universidad del Valle de Guatemala - CC3071
+Fases de Compilación: Generador de Analizadores Léxicos
 
 Gramática (prioridad mayor a menor):
   regexp   ::= union
@@ -15,7 +19,7 @@ Gramática (prioridad mayor a menor):
 
 from regex_ast import (
     EOF_CHAR, ALL_ASCII,
-    EpsilonNode, LiteralNode, CharSetNode, AnyCharNode,
+    EpsilonNode, LeafNode,
     ConcatNode, UnionNode, StarNode, PlusNode, OptionalNode,
 )
 
@@ -24,9 +28,6 @@ ESCAPE_MAP = {
     '\\': '\\', "'": "'", '"': '"',
     '0': '\0', 'b': '\b', 'f': '\f',
 }
-
-
-# ──────────────────────── Utilidades de lexing ────────────────────────
 
 def _skip_ws(s, i):
     while i < len(s) and s[i] in ' \t\n\r':
@@ -76,9 +77,6 @@ def _parse_string_literal(s, i):
         raise SyntaxError("Literal de cadena no cerrada")
     return codes, i + 1
 
-
-# ──────────────────────── Parser de Regexp ────────────────────────
-
 class RegexParser:
     """
     Parser de Expresiones Regulares YALex.
@@ -90,7 +88,7 @@ class RegexParser:
 
     def __init__(self, lets=None):
         self.lets = lets or {}
-        self._cache = {}   # cache de let ya parseados
+        self._cache = {}
         self.s = ''
         self.pos = 0
 
@@ -109,8 +107,7 @@ class RegexParser:
             )
         return node
 
-    # ── Nivel 1: Unión ──
-
+    # Union
     def _union(self):
         left = self._concat()
         while True:
@@ -123,8 +120,7 @@ class RegexParser:
                 break
         return left
 
-    # ── Nivel 2: Concatenación ──
-
+    # Concatenacion
     def _concat(self):
         nodes = []
         while True:
@@ -132,7 +128,6 @@ class RegexParser:
             if self.pos >= len(self.s):
                 break
             c = self.s[self.pos]
-            # Tokens que terminan una concatenación
             if c in ('|', ')'):
                 break
             node = self._postfix()
@@ -150,8 +145,7 @@ class RegexParser:
             result = ConcatNode(result, n)
         return result
 
-    # ── Nivel 3: Postfix (*, +, ?) ──
-
+    # Postfix
     def _postfix(self):
         node = self._diff()
         if node is None:
@@ -170,8 +164,7 @@ class RegexParser:
                 return OptionalNode(node)
         return node
 
-    # ── Nivel 4: Diferencia (#) ──
-
+    # Diferencia
     def _diff(self):
         left = self._primary()
         if left is None:
@@ -185,7 +178,7 @@ class RegexParser:
             left_codes = self._extract_codes(left)
             right_codes = self._extract_codes(right)
             diff = left_codes - right_codes
-            return CharSetNode(diff) if len(diff) != 1 else LiteralNode(next(iter(diff)))
+            return LeafNode(codes=diff) if len(diff) != 1 else LeafNode(code=next(iter(diff)))
         return left
 
     def _extract_codes(self, node):
@@ -198,10 +191,8 @@ class RegexParser:
         elif isinstance(node, AnyCharNode):
             return set(ALL_ASCII)
         elif isinstance(node, UnionNode):
-            # ['a'-'z'] # "aeiou" puede generar un UnionNode de literales
             return self._extract_codes(node.left) | self._extract_codes(node.right)
         elif isinstance(node, ConcatNode):
-            # Una cadena "aeiou" se parsea como ConcatNode de literales
             return self._extract_codes(node.left) | self._extract_codes(node.right)
         else:
             raise SyntaxError(
@@ -209,8 +200,7 @@ class RegexParser:
                 f"no a {type(node).__name__}"
             )
 
-    # ── Nivel 5: Primario ──
-
+    # Primarios
     def _primary(self):
         self.pos = _skip_ws(self.s, self.pos)
         if self.pos >= len(self.s):
@@ -218,26 +208,22 @@ class RegexParser:
 
         c = self.s[self.pos]
 
-        # Literal de carácter 'c'
         if c == "'":
             code, self.pos = _parse_char_literal(self.s, self.pos)
-            return LiteralNode(code)
+            return LeafNode(code=code)
 
-        # Literal de cadena "abc"
         elif c == '"':
             codes, self.pos = _parse_string_literal(self.s, self.pos)
             if not codes:
                 return EpsilonNode()
-            node = LiteralNode(codes[0])
+            node = LeafNode(code=codes[0])
             for code in codes[1:]:
-                node = ConcatNode(node, LiteralNode(code))
+                node = ConcatNode(node, LeafNode(code=code))
             return node
 
-        # Conjunto de caracteres [...]
         elif c == '[':
             return self._charset()
 
-        # Agrupación (...)
         elif c == '(':
             self.pos += 1
             node = self._union()
@@ -247,7 +233,6 @@ class RegexParser:
             self.pos += 1
             return node
 
-        # Identificador o palabra clave
         elif c.isalpha() or c == '_':
             start = self.pos
             while self.pos < len(self.s) and (self.s[self.pos].isalnum() or self.s[self.pos] == '_'):
@@ -255,14 +240,14 @@ class RegexParser:
             word = self.s[start:self.pos]
 
             if word == 'eof':
-                return LiteralNode(EOF_CHAR)
+                return LeafNode(code=EOF_CHAR)
             elif word == '_':
-                return AnyCharNode()
+                return LeafNode()
             else:
                 return self._resolve(word)
 
         else:
-            return None   # No es un primario válido (terminador)
+            return None
 
     def _resolve(self, ident):
         """Resuelve una referencia a una definición 'let'."""
@@ -275,8 +260,6 @@ class RegexParser:
         result = sub.parse(self.lets[ident])
         self._cache[ident] = result
         return result
-
-    # ── Conjunto de caracteres ──
 
     def _charset(self):
         """Parsea [charset] o [^charset]."""
@@ -298,7 +281,6 @@ class RegexParser:
             c = self.s[self.pos]
 
             if c == "'":
-                # Puede ser 'c' o 'c1'-'c2'
                 code, self.pos = _parse_char_literal(self.s, self.pos)
                 self.pos = _skip_ws(self.s, self.pos)
                 if self.pos < len(self.s) and self.s[self.pos] == '-':
@@ -324,7 +306,7 @@ class RegexParser:
 
         if self.pos >= len(self.s) or self.s[self.pos] != ']':
             raise SyntaxError("Conjunto de caracteres '[' no cerrado")
-        self.pos += 1  # saltar ']'
+        self.pos += 1
 
         if negated:
             codes = ALL_ASCII - codes
@@ -332,5 +314,6 @@ class RegexParser:
         if not codes:
             return EpsilonNode()
         if len(codes) == 1:
-            return LiteralNode(next(iter(codes)))
-        return CharSetNode(codes)
+            return LeafNode(code=next(iter(codes)))
+        return LeafNode(codes=codes)
+

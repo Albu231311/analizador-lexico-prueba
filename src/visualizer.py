@@ -1,17 +1,17 @@
-"""
-visualizer.py - Visualización de Árboles de Expresión y Autómatas
+﻿"""
+visualizer.py - VisualizaciÃ³n de Ãrboles de ExpresiÃ³n y AutÃ³matas
 Universidad del Valle de Guatemala - CC3071
 
-Genera imágenes PNG y archivos DOT usando Graphviz.
+Genera imÃ¡genes PNG y archivos DOT usando Graphviz.
 """
 
 import os
 from regex_ast import RegexNode, char_label, EOF_CHAR
 
 
-# ═══════════════════════════════════════════════════════════════
-#                 Árbol de Expresión
-# ═══════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+#                 Ãrbol de ExpresiÃ³n
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def _node_color(node):
     """Asigna color por tipo de nodo."""
@@ -20,9 +20,9 @@ def _node_color(node):
     if isinstance(node, (LiteralNode, CharSetNode, AnyCharNode, EpsilonNode)):
         return '#A8D8A8'   # verde claro - hojas
     elif isinstance(node, UnionNode):
-        return '#F4A460'   # naranja - unión
+        return '#F4A460'   # naranja - uniÃ³n
     elif isinstance(node, ConcatNode):
-        return '#87CEEB'   # azul - concatenación
+        return '#87CEEB'   # azul - concatenaciÃ³n
     elif isinstance(node, (StarNode, PlusNode, OptionalNode)):
         return '#DDA0DD'   # violeta - cuantificadores
     return '#FFFFFF'
@@ -37,7 +37,7 @@ def _dot_escape(s):
 
 
 def _tree_to_dot(node, dot_lines, counter):
-    """Recorre el árbol y genera líneas DOT."""
+    """Recorre el Ã¡rbol y genera lÃ­neas DOT."""
     if node is None:
         return None
     nid = f"n{counter[0]}"
@@ -57,11 +57,11 @@ def _tree_to_dot(node, dot_lines, counter):
 
 def visualize_expression_tree(rules_info, output_path):
     """
-    Genera el árbol de expresión combinado para todas las reglas.
+    Genera el Ã¡rbol de expresiÃ³n combinado para todas las reglas.
 
     Args:
         rules_info: lista de (ast, action, regexp_str)
-        output_path: ruta base de salida (sin extensión)
+        output_path: ruta base de salida (sin extensiÃ³n)
     """
     try:
         import graphviz
@@ -71,7 +71,7 @@ def visualize_expression_tree(rules_info, output_path):
 
     dot_lines = [
         'digraph ExpressionTree {',
-        '  graph [rankdir=TB bgcolor="#FAFAFA" label="Árbol de Expresión Combinado" '
+        '  graph [rankdir=TB bgcolor="#FAFAFA" label="Ãrbol de ExpresiÃ³n Combinado" '
         '         fontsize=14 fontname="Helvetica"];',
         '  node  [shape=circle fontname="Courier" fontsize=10];',
         '  edge  [arrowsize=0.7];',
@@ -81,7 +81,7 @@ def visualize_expression_tree(rules_info, output_path):
     rule_roots = []
 
     for i, (ast, action, regexp_str) in enumerate(rules_info):
-        # Nodo raíz de la regla
+        # Nodo raÃ­z de la regla
         rid = f"rule{i}"
         short_re = regexp_str[:40] + ('...' if len(regexp_str) > 40 else '')
         short_re = _dot_escape(short_re)
@@ -109,20 +109,20 @@ def visualize_expression_tree(rules_info, output_path):
             src = graphviz.Source(dot_source)
             src.render(output_path, format='png', cleanup=True)
         except Exception as e:
-            print(f"  [!] Error al renderizar árbol: {e}")
+            print(f"  [!] Error al renderizar Ã¡rbol: {e}")
             # Intentar con subprocess
             _render_dot(dot_file, output_path + '.png')
     else:
         _render_dot(dot_file, output_path + '.png')
 
 
-# ═══════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 #                     DFA
-# ═══════════════════════════════════════════════════════════════
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 def visualize_dfa(dfa, output_path, rule_labels=None):
     """
-    Genera la visualización del DFA.
+    Genera la visualizaciÃ³n del DFA.
 
     Args:
         dfa: objeto DFA
@@ -131,7 +131,7 @@ def visualize_dfa(dfa, output_path, rule_labels=None):
     """
     dot_lines = [
         'digraph DFA {',
-        '  graph [rankdir=LR bgcolor="#FAFAFA" label="DFA del Analizador Léxico" '
+        '  graph [rankdir=LR bgcolor="#FAFAFA" label="DFA del Analizador LÃ©xico" '
         '         fontsize=14 fontname="Helvetica"];',
         '  node  [fontname="Courier" fontsize=10];',
         '  edge  [fontname="Courier" fontsize=9 arrowsize=0.7];',
@@ -139,7 +139,7 @@ def visualize_dfa(dfa, output_path, rule_labels=None):
         f'  __start__ -> {dfa.start};',
     ]
 
-    all_states = set(range(dfa.num_states))
+    all_states = set(range(len(dfa.states)))
 
     for s in sorted(all_states):
         if s in dfa.accepts:
@@ -157,9 +157,10 @@ def visualize_dfa(dfa, output_path, rule_labels=None):
             dot_lines.append(f'  {s} [shape=circle label="q{s}"];')
 
     # Agrupar transiciones por (origen, destino) para mostrar rangos
-    edge_labels = {}   # (from, to) → list of char codes
-    for (frm, sym), to in dfa.transitions.items():
-        edge_labels.setdefault((frm, to), []).append(sym)
+    edge_labels = {}   # (from, to) â†’ list of char codes
+    for frm, sym_map in dfa.transitions.items():
+        for sym, to in sym_map.items():
+            edge_labels.setdefault((frm, to), []).append(sym)
 
     for (frm, to), syms in sorted(edge_labels.items()):
         label = _compact_label(sorted(syms))
@@ -175,7 +176,7 @@ def visualize_dfa(dfa, output_path, rule_labels=None):
 
 
 def _compact_label(codes):
-    """Convierte lista de códigos en etiqueta compacta (rangos)."""
+    """Convierte lista de cÃ³digos en etiqueta compacta (rangos)."""
     if not codes:
         return ''
     if len(codes) > 12:
@@ -199,7 +200,7 @@ def _compact_label(codes):
 
 
 def visualize_nfa(nfa, output_path):
-    """Genera la visualización del NFA."""
+    """Genera la visualizaciÃ³n del NFA."""
     from regex_ast import char_label
 
     dot_lines = [
@@ -212,7 +213,7 @@ def visualize_nfa(nfa, output_path):
         f'  __s__ -> {nfa.start};',
     ]
 
-    for s in range(nfa.num_states):
+    for s in range(nfa.states):
         if s in nfa.accepts:
             dot_lines.append(f'  {s} [shape=doublecircle style=filled fillcolor="#90EE90"];')
         elif s == nfa.start:
@@ -221,7 +222,7 @@ def visualize_nfa(nfa, output_path):
     edge_labels = {}
     for frm, trans_list in nfa.transitions.items():
         for sym, to in trans_list:
-            lbl = 'ε' if sym is None else char_label(sym)
+            lbl = 'Îµ' if sym is None else char_label(sym)
             edge_labels.setdefault((frm, to), set()).add(lbl)
 
     for (frm, to), lbls in sorted(edge_labels.items()):
@@ -248,10 +249,12 @@ def _render_dot(dot_file, png_file):
             capture_output=True, timeout=30
         )
         if result.returncode != 0:
-            print(f"  [!] dot retornó código {result.returncode}: {result.stderr.decode()}")
+            print(f"  [!] dot retornÃ³ cÃ³digo {result.returncode}: {result.stderr.decode()}")
         else:
-            print(f"  [✓] Imagen generada: {png_file}")
+            print(f"  [âœ“] Imagen generada: {png_file}")
     except FileNotFoundError:
         print("  [!] 'dot' no encontrado. Instale graphviz: sudo apt-get install graphviz")
     except Exception as e:
         print(f"  [!] Error al renderizar: {e}")
+
+
