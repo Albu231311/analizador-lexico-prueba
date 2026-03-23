@@ -9,23 +9,23 @@ Generador de Analizadores Léxicos basado en la especificación YALex.
 
 ```
 src/
-  main.py          → Punto de entrada del generador
-  yalex_parser.py  → Parser de archivos .yal
-  regex_parser.py  → Parser de Expresiones Regulares → AST
-  regex_ast.py     → Nodos del Árbol de Expresión
-  automata.py      → NFA (Thompson) + DFA (Subconjuntos) + Minimización (Hopcroft)
+  main.py          → Punto de entrada del generador (Orquestador Pipeline)
+  yalex_parser.py  → Parser de archivos .yal y Generador de Tokens
+  regex_parser.py  → Parser de Expresiones Regulares → AST y Combinación (Single Regex)
+  regex_ast.py     → Nodos del Árbol de Expresión (Cálculo de Anulable, Firstpos, Lastpos)
+  automata.py      → Construcción Directa de DFA evaluando 'followpos' del Árbol
   visualizer.py    → Visualización con Graphviz
-  code_gen.py      → Generación de código Python
+  code_gen.py      → Generación de código Python (Orquesta Longest Match)
 
 examples/
   ejemplo.yal      → Especificación YALex de ejemplo
   input_prueba.txt → Archivo de entrada para probar el lexer
 
 output/
-  ejemplo_lexer.py                  → Analizador Léxico generado
-  ejemplo_lexer_expression_tree.png → Árbol de Expresión
-  ejemplo_lexer_dfa.png             → Diagrama DFA minimizado
-  ejemplo_lexer_nfa.png             → Diagrama NFA (Thompson)
+  ejemplo_lexer.py                  → Analizador Léxico generado en Python
+  ejemplo_lexer_expression_tree.png → Imagen del Árbol de Expresión Combinado
+  ejemplo_lexer_dfa.png             → Imagen del Diagrama DFA Directo
+  ejemplo_lexer_*.dot               → Código fuente Graphviz
 ```
 
 ---
@@ -33,24 +33,18 @@ output/
 ## Requisitos
 
 - Python 3.10+
-- Graphviz (para visualizaciones): `sudo apt-get install graphviz`
+- Graphviz (para visualizaciones): `sudo apt-get install graphviz` o equivalente en Windows
 
 ---
 
 ## Uso del Generador
 
 ```bash
-# Uso básico
+# Uso básico ("hello.pico" por defecto si existe, o especificar)
 python src/main.py mi_lexer.yal
 
 # Con nombre de salida personalizado
 python src/main.py mi_lexer.yal -o output/mi_lexer
-
-# Modo detallado + diagrama NFA
-python src/main.py mi_lexer.yal -o output/mi_lexer --verbose --show-nfa
-
-# Sin minimización DFA
-python src/main.py mi_lexer.yal --no-minimize
 ```
 
 ### Parámetros
@@ -59,49 +53,29 @@ python src/main.py mi_lexer.yal --no-minimize
 |-----------------|--------------------------------------|
 | `input`         | Archivo `.yal` de entrada            |
 | `-o / --output` | Nombre base de archivos de salida    |
-| `--verbose`     | Mostrar detalles del proceso         |
-| `--show-nfa`    | Generar visualización del NFA        |
-| `--no-minimize` | No minimizar el DFA                  |
 
 ---
 
 ## Uso del Analizador Léxico Generado
 
 ```bash
-python output/mi_lexer.py archivo_entrada.txt
+python output/mi_lexer_lexer.py archivo_entrada.pico
 ```
 
-### Como módulo Python
-
-```python
-from mi_lexer import gettoken   # o el entrypoint definido en el .yal
-
-tokens = gettoken("x = 10 + 20")
-for tok in tokens:
-    print(tok)
-```
+El autogenerador priorizará las coincidencias a través del concepto de **Longest Match**. En caso de empates en el escaneo, su autómata utilizará el Token definido con **prioridad más alta** (El id menor / definido primero).
 
 ---
 
-## Estructura de Archivo `.yal`
+## Arquitectura y Algoritmos (Método del Árbol)
 
-```
-(* comentario *)
-{ header_code }
+1. **Expansión de Macros y YALex Parse** — Se procesan las reglas y lets.
+2. **Single Regex (La Gran Unión)** — Todos los tokens se unifican bajo la regla de Aho-Sethi-Ullman agregando `#` finalizadores.
+3. **AST a DFA Directo** — El árbol computa de forma ascendente las tablas de anulabilidad, firstpos, lastpos y **followpos** para iterar dinámicamente y hallar los estados finitos deterministas sin transiciones épsilon intermedias.
+4. **Generación** — Escritura final al disco.
 
-let ident = regexp
-...
+---
 
-rule entrypoint =
-    regexp { acción }
-  | regexp { acción }
-  ...
-
-{ trailer_code }
-```
-
-### Operadores de Expresiones Regulares
-
+## Operadores de Expresiones Regulares
 | Operador        | Descripción                        |
 |-----------------|------------------------------------|
 | `'c'`           | Carácter literal                   |
@@ -119,31 +93,3 @@ rule entrypoint =
 | `_`             | Cualquier carácter                 |
 | `eof`           | Fin de archivo                     |
 | `ident`         | Referencia a definición `let`      |
-
-### Precedencia (mayor a menor)
-
-1. `#`
-2. `*`, `+`, `?`
-3. Concatenación
-4. `|`
-
----
-
-## Algoritmos Implementados
-
-1. **Construcción de Thompson** — Convierte el AST de la regex en un NFA
-2. **Construcción de Subconjuntos** — Convierte el NFA en un DFA
-3. **Minimización de Hopcroft** — Minimiza el DFA
-4. **Longest Match** — El lexer generado usa concordancia más larga
-
----
-
-## Salidas del Generador
-
-| Archivo                            | Contenido                         |
-|------------------------------------|-----------------------------------|
-| `<nombre>.py`                      | Analizador Léxico en Python       |
-| `<nombre>_expression_tree.png`     | Árbol de Expresión combinado      |
-| `<nombre>_dfa.png`                 | Diagrama del DFA minimizado       |
-| `<nombre>_nfa.png` (opcional)      | Diagrama del NFA de Thompson      |
-| `<nombre>_*.dot`                   | Fuente Graphviz de cada diagrama  |
